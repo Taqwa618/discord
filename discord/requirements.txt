@@ -1,5 +1,2 @@
 discord.py
 aiohttp
-youtube-dl
-ffmpeg-python
-python-dotenv
