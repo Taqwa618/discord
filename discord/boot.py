@@ -7,6 +7,10 @@ import json
 import os
 import aiohttp
 
+@bot.command(name='test')
+async def test(ctx):
+    await ctx.send('Бот работает и слышит команды!')
+    
 # ========== ТОКЕН (ВСТАВЬТЕ СВОЙ) ==========
 TOKEN = 'MTU0MTg3OTUzOTAyMDU5NTI4MA.GYIURH.IhLwSFPq0VcQ1hTEdglQ7hxKeCQ3tBQm7EIEng'  # ← ЗАМЕНИТЕ ЭТО НА ВАШ ТОКЕН
 PREFIX = '!'
