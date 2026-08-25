@@ -5,7 +5,7 @@ import asyncio
 import datetime
 import json
 import os
-import aiohttp
+import aiohttp  # ← исправлено
 
 # ========== ТОКЕН ИЗ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ ==========
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -14,20 +14,19 @@ if not TOKEN:
 
 PREFIX = os.getenv('PREFIX', '!')
 
-# ========== СОЗДАЁМ БОТА ==========
 bot = commands.Bot(command_prefix=PREFIX, intents=discord.Intents.all())
 
 # ========== ДАННЫЕ ДЛЯ ЭКОНОМИКИ ==========
 economy_file = 'economy.json'
 if os.path.exists(economy_file):
-    with open(economy_file, 'r') as f:
-        economy = json.load(f)
+    with open(economy_file, 'r') as f:  # ← нужен отступ
+        economy = json.load(f)          # ← нужен отступ
 else:
     economy = {}
 
 def save_economy():
-    with open(economy_file, 'w') as f:
-        json.dump(economy, f, indent=4)
+    with open(economy_file, 'w') as f:  # ← нужен отступ
+        json.dump(economy, f, indent=4) # ← нужен отступ
 
 # ========== ОБЩИЕ КОМАНДЫ ==========
 
