@@ -7,14 +7,14 @@ import json
 import os
 import aiohttp
 
-@bot.command(name='test')
-async def test(ctx):
-    await ctx.send('Бот работает и слышит команды!')
-    
-# ========== ТОКЕН (ВСТАВЬТЕ СВОЙ) ==========
-TOKEN = 'MTU0MTg3OTUzOTAyMDU5NTI4MA.GYIURH.IhLwSFPq0VcQ1hTEdglQ7hxKeCQ3tBQm7EIEng'  # ← ЗАМЕНИТЕ ЭТО НА ВАШ ТОКЕН
-PREFIX = '!'
+# ========== ТОКЕН ИЗ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ ==========
+TOKEN = os.getenv('DISCORD_TOKEN')
+if not TOKEN:
+    raise ValueError("Токен не найден в переменных окружения!")
 
+PREFIX = os.getenv('PREFIX', '!')
+
+# ========== СОЗДАЁМ БОТА ==========
 bot = commands.Bot(command_prefix=PREFIX, intents=discord.Intents.all())
 
 # ========== ДАННЫЕ ДЛЯ ЭКОНОМИКИ ==========
@@ -36,6 +36,11 @@ async def ping(ctx):
     """Проверяет задержку бота"""
     latency = round(bot.latency * 1000)
     await ctx.send(f'🏓 Pong! Задержка: {latency} мс')
+
+@bot.command(name='test')
+async def test(ctx):
+    """Тестовая команда"""
+    await ctx.send('✅ Бот работает и слышит команды!')
 
 @bot.command(name='hello')
 async def hello(ctx):
@@ -412,19 +417,6 @@ async def leave(ctx):
     else:
         await ctx.send('❌ Бот не в голосовом канале')
 
-@bot.command(name='play')
-async def play(ctx, *, url: str = None):
-    """Воспроизводит аудио (только YouTube)"""
-    if not ctx.voice_client:
-        await ctx.send('❌ Бот не в голосовом канале. Используй !join')
-        return
-    
-    if not url:
-        await ctx.send('⚠️ Укажите ссылку на YouTube: !play https://youtube.com/...')
-        return
-    
-    await ctx.send('🎵 Загрузка... (это демо-версия, полная реализация требует ffmpeg)')
-
 # ========== КОМАНДА HELP ==========
 
 @bot.command(name='commands')
@@ -436,7 +428,7 @@ async def help_command(ctx, category: str = None):
             'развлечения': ['coin', 'roll', 'guess', 'joke', 'cat', 'dog', '8ball', 'meme', 'rps', 'quote'],
             'администрирование': ['clear', 'kick', 'ban', 'unban', 'mute', 'unmute', 'userinfo', 'serverinfo', 'avatar'],
             'экономика': ['balance', 'daily', 'work', 'shop', 'buy'],
-            'музыка': ['join', 'leave', 'play']
+            'музыка': ['join', 'leave']
         }
         
         if category.lower() not in categories:
@@ -454,7 +446,7 @@ async def help_command(ctx, category: str = None):
         elif cat == 'экономика':
             embed.add_field(name='💰 Экономика', value='`!balance`, `!daily`, `!work`, `!shop`, `!buy`', inline=False)
         elif cat == 'музыка':
-            embed.add_field(name='🎵 Музыка', value='`!join`, `!leave`, `!play`', inline=False)
+            embed.add_field(name='🎵 Музыка', value='`!join`, `!leave`', inline=False)
         
         await ctx.send(embed=embed)
         return
@@ -482,8 +474,8 @@ async def help_command(ctx, category: str = None):
         inline=False
     )
     embed.add_field(
-        name='🎵 Музыка (3 команды)',
-        value='`!join`, `!leave`, `!play`',
+        name='🎵 Музыка (2 команды)',
+        value='`!join`, `!leave`',
         inline=False
     )
     embed.add_field(
@@ -491,7 +483,7 @@ async def help_command(ctx, category: str = None):
         value='`!ping`, `!hello`, `!time`',
         inline=False
     )
-    embed.set_footer(text=f'Всего команд: 30 | Бот {bot.user.name}')
+    embed.set_footer(text=f'Всего команд: 29 | Бот {bot.user.name}')
     
     await ctx.send(embed=embed)
 
@@ -524,37 +516,4 @@ async def on_ready():
     except Exception as e:
         print(f'❌ Ошибка синхронизации: {e}')
 
-bot.run(TOKEN)
-import discord
-from discord.ext import commands
-import os
-
-# Токен бота (копируйте из Discord Developer Portal)
-TOKEN = 'ВАШ_ТОКЕН_БОТА'  # Вставьте сюда ваш токен
-
-# Создаём бота с префиксом команд '!'
-bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
-
-# Событие, когда бот запустился
-@bot.event
-async def on_ready():
-    print(f'✅ Бот {bot.user} подключился к Discord!')
-    print(f'📊 На серверах: {len(bot.guilds)}')
-
-# Простая команда !ping
-@bot.command()
-async def ping(ctx):
-    await ctx.send('🏓 Pong!')
-
-# Слеш-команда /hello
-@bot.tree.command(name='hello', description='Поздороваться с ботом')
-async def hello(interaction: discord.Interaction):
-    await interaction.response.send_message(f'Привет, {interaction.user.name}!')
-
-# Команда !say (повторяет текст)
-@bot.command()
-async def say(ctx, *, text):
-    await ctx.send(text)
-
-# Запускаем бота
 bot.run(TOKEN)
