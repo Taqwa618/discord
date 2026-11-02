@@ -1,0 +1,12 @@
+# Секреты — никогда не публикуем
+.env
+
+# База данных
+economy.db
+*.sqlite
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
