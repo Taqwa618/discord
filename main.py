@@ -17,7 +17,8 @@ import datetime
 import os
 import random
 import traceback
-
+import os
+os.system("pip install PyNaCl")
 import aiohttp
 import aiosqlite
 import discord
