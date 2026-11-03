@@ -506,6 +506,32 @@ async def on_command_error(ctx, error):
         await ctx.send("❌ Произошла ошибка. Подробности — в логах.")
 
 
+# ================== ГОЛОСОВЫЕ КАНАЛЫ ==================
+@bot.command(name="join")
+async def join(ctx):
+    """Заставляет бота зайти в ваш голосовой канал."""
+    if ctx.author.voice is None:
+        return await ctx.send("❌ Вы не находитесь в голосовом канале.")
+    
+    channel = ctx.author.voice.channel
+    if ctx.voice_client is not None:
+        return await ctx.voice_client.move_to(channel)
+    
+    try:
+        await channel.connect()
+        await ctx.send(f"🔊 Бот подключился к каналу {channel.mention}")
+    except Exception as e:
+        await ctx.send(f"❌ Ошибка подключения: {e}")
+
+@bot.command(name="leave")
+async def leave(ctx):
+    """Заставляет бота выйти из голосового канала."""
+    if ctx.voice_client is None:
+        return await ctx.send("❌ Бот не находится в голосовом канале.")
+    
+    await ctx.voice_client.disconnect()
+    await ctx.send("🔇 Бот отключился от канала.")
+
 # ================== ЗАПУСК ==================
 if __name__ == "__main__":
-    bot.run(TOKEN)
+    bot.run(TOKEN)Ы
