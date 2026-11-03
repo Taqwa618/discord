@@ -534,4 +534,4 @@ async def leave(ctx):
 
 # ================== ЗАПУСК ==================
 if __name__ == "__main__":
-    bot.run(TOKEN)Ы
+    bot.run(TOKEN)
