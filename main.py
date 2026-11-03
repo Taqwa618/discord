@@ -17,7 +17,6 @@ import datetime
 import os
 import random
 import traceback
-import os
 os.system("pip install PyNaCl")
 import aiohttp
 import aiosqlite
@@ -26,8 +25,6 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 # ================== ТОКЕН И НАСТРОЙКИ ==================
-# load_dotenv подхватит файл .env, если он есть (удобно для локального запуска).
-# На хостинге переменные окружения задаются в панели, .env не требуется.
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN") or os.getenv("TOKEN")
@@ -97,12 +94,6 @@ intents.members = True           # данные участников (!userinfo,
 
 
 class EconomyBot(commands.Bot):
-    """commands.Bot с aiohttp-сессией для запросов к сторонним API.
-
-    Сессия создается один раз в setup_hook (до подключения) и закрывается
-    в close() — так она не «умирает» при переподключениях.
-    """
-
     def __init__(self):
         super().__init__(
             command_prefix=commands.when_mentioned_or(PREFIX),
@@ -111,14 +102,12 @@ class EconomyBot(commands.Bot):
         self.session: aiohttp.ClientSession | None = None
 
     async def setup_hook(self):
-        # Выполняется один раз при старте, до события on_ready
         await init_db()
         self.session = aiohttp.ClientSession(
             headers={"User-Agent": "DiscordBot (economy, 1.0)"}
         )
 
     async def close(self):
-        # Корректно освобождаем ресурсы при остановке бота
         if self.session and not self.session.closed:
             await self.session.close()
         await super().close()
@@ -178,6 +167,11 @@ async def commands_list(ctx):
         ),
         inline=False,
     )
+    embed.add_field(
+        name="🔊 Голос",
+        value=f"`{PREFIX}join`, `{PREFIX}leave` (если поддерживается хостингом)",
+        inline=False,
+    )
     await ctx.send(embed=embed)
 
 
@@ -227,9 +221,7 @@ async def joke(ctx):
 @bot.command(name="cat")
 async def cat(ctx):
     try:
-        async with bot.session.get(
-            "https://api.thecatapi.com/v1/images/search"
-        ) as resp:
+        async with bot.session.get("https://api.thecatapi.com/v1/images/search") as resp:
             data = await resp.json()
         await ctx.send(data[0]["url"])
     except Exception:
@@ -280,9 +272,7 @@ async def rps(ctx, choice: str):
     else:
         result = "😔 Бот выиграл!"
 
-    await ctx.send(
-        f"🧑 Твой выбор: {choice}\n🤖 Мой выбор: {bot_choice}\n{result}"
-    )
+    await ctx.send(f"🧑 Твой выбор: {choice}\n🤖 Мой выбор: {bot_choice}\n{result}")
 
 
 @bot.command(name="8ball")
@@ -296,7 +286,6 @@ async def eight_ball(ctx, *, question):
 
 # ================== МОДЕРАЦИЯ ==================
 async def _check_target_role(ctx, member: discord.Member) -> bool:
-    """Проверяет, что можно модерировать участника. False — если нет прав или это себя."""
     if member == ctx.author:
         await ctx.send("❌ Нельзя применить это к самому себе!")
         return False
@@ -315,7 +304,7 @@ async def _check_target_role(ctx, member: discord.Member) -> bool:
 async def clear(ctx, amount: int):
     if amount < 1 or amount > 100:
         return await ctx.send("⚠️ Укажите число от 1 до 100.")
-    deleted = await ctx.channel.purge(limit=amount + 1)  # +1 — команда !clear
+    deleted = await ctx.channel.purge(limit=amount + 1)
     msg = await ctx.send(f"🗑️ Удалено {len(deleted) - 1} сообщений.")
     await asyncio.sleep(3)
     await msg.delete()
@@ -357,7 +346,7 @@ async def unban(ctx, user_id: int):
 async def mute(ctx, member: discord.Member, minutes: int, *, reason: str = "Не указана"):
     if not await _check_target_role(ctx, member):
         return
-    if minutes < 1 or minutes > 40320:  # максимум 28 дней (лимит Discord)
+    if minutes < 1 or minutes > 40320:
         return await ctx.send("⚠️ Укажите срок от 1 минуты до 40320 (28 дней).")
     duration = datetime.timedelta(minutes=minutes)
     await member.timeout(duration, reason=reason)
@@ -473,8 +462,6 @@ async def buy(ctx, item: int):
     if role in ctx.author.roles:
         return await ctx.send(f"⚠️ У тебя уже есть роль «{role_data['name']}»!")
 
-    # Сначала выдаем роль, потом списываем монеты:
-    # если выдача не удалась, деньги не теряются
     try:
         await ctx.author.add_roles(role)
     except discord.Forbidden:
@@ -488,7 +475,6 @@ async def buy(ctx, item: int):
 # ================== ОБРАБОТКА ОШИБОК ==================
 @bot.event
 async def on_command_error(ctx, error):
-    # Неизвестную команду молча игнорируем (раньше вызывало ошибку в чат)
     if isinstance(error, commands.CommandNotFound):
         return
     if isinstance(error, commands.MissingPermissions):
@@ -502,7 +488,6 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.BadArgument):
         await ctx.send("⚠️ Неверный аргумент. Проверь команду.")
     else:
-        # Полный текст ошибки — в консоль (логи хостинга), в чат — краткое сообщение
         traceback.print_exception(type(error), error, error.__traceback__)
         await ctx.send("❌ Произошла ошибка. Подробности — в логах.")
 
@@ -522,7 +507,11 @@ async def join(ctx):
         await channel.connect()
         await ctx.send(f"🔊 Бот подключился к каналу {channel.mention}")
     except Exception as e:
-        await ctx.send(f"❌ Ошибка подключения: {e}")
+        # Если PyNaCl не установлен на сервере
+        if "PyNaCl" in str(e) or "davey" in str(e):
+            await ctx.send("❌ Ошибка: на сервере не установлена библиотека PyNaCl (хостинг не поддерживает голос).")
+        else:
+            await ctx.send(f"❌ Ошибка подключения: {e}")
 
 @bot.command(name="leave")
 async def leave(ctx):
