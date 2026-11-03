@@ -499,6 +499,10 @@ async def join(ctx):
     if ctx.author.voice is None:
         return await ctx.send("❌ Вы не находитесь в голосовом канале.")
     
+    # Проверяем, есть ли вообще поддержка голоса в этой сборке
+    if not discord.opus.is_loaded():
+        return await ctx.send("❌ Голосовые функции недоступны на текущем хостинге (отсутствует PyNaCl/opus).")
+
     channel = ctx.author.voice.channel
     if ctx.voice_client is not None:
         return await ctx.voice_client.move_to(channel)
@@ -506,12 +510,8 @@ async def join(ctx):
     try:
         await channel.connect()
         await ctx.send(f"🔊 Бот подключился к каналу {channel.mention}")
-    except Exception as e:
-        # Если PyNaCl не установлен на сервере
-        if "PyNaCl" in str(e) or "davey" in str(e):
-            await ctx.send("❌ Ошибка: на сервере не установлена библиотека PyNaCl (хостинг не поддерживает голос).")
-        else:
-            await ctx.send(f"❌ Ошибка подключения: {e}")
+    except Exception:
+        await ctx.send("❌ Ошибка подключения к голосовому каналу. Скорее всего, хостинг блокирует голосовой трафик.")
 
 @bot.command(name="leave")
 async def leave(ctx):
@@ -521,7 +521,7 @@ async def leave(ctx):
     
     await ctx.voice_client.disconnect()
     await ctx.send("🔇 Бот отключился от канала.")
-
+  
 # ================== ЗАПУСК ==================
 if __name__ == "__main__":
     bot.run(TOKEN)
